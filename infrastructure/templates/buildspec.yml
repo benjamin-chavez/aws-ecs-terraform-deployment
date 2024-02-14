@@ -1,0 +1,91 @@
+version: 0.2
+
+# Cache Docker layers to S3 and leverage local caching
+cache:
+  paths:
+    - '/root/.docker/**/*'
+    - '/var/cache/docker/buildkit'
+    - '/var/lib/docker/cache'
+
+phases:
+  pre_build:
+    commands:
+      - echo Logging in to Amazon ECR...
+      - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
+      - echo Pulling latest image for caching...
+      - docker pull $REPO_URL:latest || true
+      - echo Checking for build type...
+      - |
+        if expr "${FOLDER_PATH}" : ".*client*" ; then
+          echo "Client build, embedding frontend layer file with ALB backend DNS"
+          # sed -i "s|<SERVER_ALB_URL>|$SERVER_ALB_URL|g" ./apps/client/next.config.js
+        else
+          echo "Server build, adding ECS Task Role to the task definition file"
+          sed -i "3i\"taskRoleArn\": \"arn:aws:iam::<AWS_ACCOUNT_ID>:role/<ECS_TASK_ROLE>\"," ./infrastructure/templates/taskdef.json
+        fi
+
+  build:
+    commands:
+      - echo Build started on `date`
+      - echo "Building Docker image..."
+      - docker build --build-arg NODE_ENV=production --cache-from $REPO_URL:latest -t $REPO_URL:$IMAGE_TAG -f $FOLDER_PATH/Dockerfile .
+
+  post_build:
+    commands:
+      - echo Build completed on `date`
+      - echo Pushing the Docker image...
+      - echo $REPO_URL:$IMAGE_TAG
+      - docker push $REPO_URL:$IMAGE_TAG
+      - echo Changing directory to templates directory
+      - |
+        cd ./infrastructure/templates
+        echo Preparing spec files in new folder
+        mkdir -p Artifacts
+        cp appspec.yaml Artifacts/appspec.yaml
+        cp taskdef.json Artifacts/taskdef.json
+        echo Changing directory to the Artifacts directory
+        cd Artifacts
+        echo Preparating artifacts
+        sed -i "s|<TASK_DEFINITION_FAMILY>|$TASK_DEFINITION_FAMILY|g" taskdef.json
+        sed -i "s|<CONTAINER_NAME>|$CONTAINER_NAME|g" appspec.yaml taskdef.json
+        sed -i "s|<SERVICE_PORT>|$SERVICE_PORT|g" appspec.yaml taskdef.json
+        sed -i "s|<ECS_ROLE>|$ECS_ROLE|g" taskdef.json
+        sed -i "s|<ECS_TASK_ROLE>|$ECS_TASK_ROLE|g" taskdef.json
+        sed -i "s|<REPO_URL>|$REPO_URL|g" taskdef.json
+        sed -i "s|<AWS_ACCOUNT_ID>|$AWS_ACCOUNT_ID|g" taskdef.json
+        sed -i "s|<AWS_REGION>|$AWS_REGION|g" taskdef.json
+        sed -i "s|<CLIENT_URL>|$CLIENT_URL|g" taskdef.json
+        sed -i "s|<USE_LOCAL_DB_TUNNEL>|$USE_LOCAL_DB_TUNNEL|g" taskdef.json
+        sed -i "s|<DATABASE_USER>|$DATABASE_USER|g" taskdef.json
+        sed -i "s|<DATABASE_PASSWORD>|$DATABASE_PASSWORD|g" taskdef.json
+        sed -i "s|<DATABASE_HOST>|$DATABASE_HOST|g" taskdef.json
+        sed -i "s|<DATABASE_PORT>|$DATABASE_PORT|g" taskdef.json
+        sed -i "s|<DATABASE_NAME>|$DATABASE_NAME|g" taskdef.json
+        sed -i "s|<AUTH0_AUDIENCE>|$AUTH0_AUDIENCE|g" taskdef.json
+        sed -i "s|<AUTH0_BASE_URL>|$AUTH0_BASE_URL|g" taskdef.json
+        sed -i "s|<AUTH0_CLIENT_ID>|$AUTH0_CLIENT_ID|g" taskdef.json
+        sed -i "s|<AUTH0_CLIENT_SECRET>|$AUTH0_CLIENT_SECRET|g" taskdef.json
+        sed -i "s|<AUTH0_ISSUER_BASE_URL>|$AUTH0_ISSUER_BASE_URL|g" taskdef.json
+        sed -i "s|<AUTH0_SCOPE>|$AUTH0_SCOPE|g" taskdef.json
+        sed -i "s|<AUTH0_SECRET>|$AUTH0_SECRET|g" taskdef.json
+        sed -i "s|<STRIPE_PUBLISHABLE_KEY>|$STRIPE_PUBLISHABLE_KEY|g" taskdef.json
+        sed -i "s|<STRIPE_SECRET_KEY>|$STRIPE_SECRET_KEY|g" taskdef.json
+        sed -i "s|<STRIPE_WEBHOOK_SECRET>|$STRIPE_WEBHOOK_SECRET|g" taskdef.json
+        sed -i "s|<AWS_MQ_USERNAME>|$AWS_MQ_USERNAME|g" taskdef.json
+        sed -i "s|<AWS_MQ_PASSWORD>|$AWS_MQ_PASSWORD|g" taskdef.json
+        sed -i "s|<AWS_MQ_BROKER_URL>|$AWS_MQ_BROKER_URL|g" taskdef.json
+        sed -i "s|<AWS_MQ_PORT>|$AWS_MQ_PORT|g" taskdef.json
+        sed -i "s|<AWS_SQS_STRIPE_WEBHOOKS_QUEUE_URL>|$AWS_SQS_STRIPE_WEBHOOKS_QUEUE_URL|g" taskdef.json
+        sed -i "s|<AWS_SQS_STRIPE_WEBHOOKS_DLQ_URL>|$AWS_SQS_STRIPE_WEBHOOKS_DLQ_URL|g" taskdef.json
+        sed -i "s|<AWS_CLOUDFRONT_URL>|$AWS_CLOUDFRONT_URL|g" taskdef.json
+        sed -i "s|<AWS_CLOUDFRONT_DISTRIBUTION_ID>|$AWS_CLOUDFRONT_DISTRIBUTION_ID|g" taskdef.json
+        sed -i "s|<AWS_CLOUDFRONT_KEYPAIR_ID>|$AWS_CLOUDFRONT_KEYPAIR_ID|g" taskdef.json
+        sed -i "s|<AWS_CLOUDFRONT_PRIVATE_KEY>|$AWS_CLOUDFRONT_PRIVATE_KEY|g" taskdef.json
+
+
+
+artifacts:
+  files:
+    - '**/*'
+  base-directory: 'infrastructure/templates/Artifacts'
+  discard-paths: yes

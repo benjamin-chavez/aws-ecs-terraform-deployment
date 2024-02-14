@@ -1,0 +1,13 @@
+# infrastructure/tfvars.tf
+
+aws_profile      = ""
+aws_region       = ""
+environment_name = ""
+repository_name  = ""
+repository_owner = ""
+github_token     = ""
+
+db_user      = ""
+db_password  = ""
+
+create_bastion_host = true

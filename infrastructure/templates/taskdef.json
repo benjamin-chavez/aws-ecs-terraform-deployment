@@ -1,0 +1,143 @@
+{
+  "executionRoleArn": "arn:aws:iam::<AWS_ACCOUNT_ID>:role/<ECS_ROLE>",
+  "containerDefinitions": [
+    {
+      "name": "<CONTAINER_NAME>",
+      "image": "<REPO_URL>:latest",
+      "essential": true,
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "secretOptions": null,
+        "options": {
+          "awslogs-group": "/ecs/<TASK_DEFINITION_FAMILY>",
+          "awslogs-region": "<AWS_REGION>",
+          "awslogs-stream-prefix": "ecs"
+        }
+      },
+      "secrets": [
+        {
+          "name": "CLIENT_URL",
+          "valueFrom": "<CLIENT_URL>"
+        },
+        {
+          "name": "USE_LOCAL_DB_TUNNEL",
+          "valueFrom": "<USE_LOCAL_DB_TUNNEL>"
+        },
+        {
+          "name": "DATABASE_USER",
+          "valueFrom": "<DATABASE_USER>"
+        },
+        {
+          "name": "DATABASE_PASSWORD",
+          "valueFrom": "<DATABASE_PASSWORD>"
+        },
+        {
+          "name": "DATABASE_HOST",
+          "valueFrom": "<DATABASE_HOST>"
+        },
+        {
+          "name": "DATABASE_PORT",
+          "valueFrom": "<DATABASE_PORT>"
+        },
+        {
+          "name": "DATABASE_NAME",
+          "valueFrom": "<DATABASE_NAME>"
+        },
+        {
+          "name": "AUTH0_AUDIENCE",
+          "valueFrom": "<AUTH0_AUDIENCE>"
+        },
+        {
+          "name": "AUTH0_BASE_URL",
+          "valueFrom": "<AUTH0_BASE_URL>"
+        },
+        {
+          "name": "AUTH0_CLIENT_ID",
+          "valueFrom": "<AUTH0_CLIENT_ID>"
+        },
+        {
+          "name": "AUTH0_CLIENT_SECRET",
+          "valueFrom": "<AUTH0_CLIENT_SECRET>"
+        },
+        {
+          "name": "AUTH0_ISSUER_BASE_URL",
+          "valueFrom": "<AUTH0_ISSUER_BASE_URL>"
+        },
+        {
+          "name": "AUTH0_SCOPE",
+          "valueFrom": "<AUTH0_SCOPE>"
+        },
+        {
+          "name": "AUTH0_SECRET",
+          "valueFrom": "<AUTH0_SECRET>"
+        },
+        {
+          "name": "STRIPE_PUBLISHABLE_KEY",
+          "valueFrom": "<STRIPE_PUBLISHABLE_KEY>"
+        },
+        {
+          "name": "STRIPE_SECRET_KEY",
+          "valueFrom": "<STRIPE_SECRET_KEY>"
+        },
+        {
+          "name": "STRIPE_WEBHOOK_SECRET",
+          "valueFrom": "<STRIPE_WEBHOOK_SECRET>"
+        },
+        {
+          "name": "AWS_MQ_USERNAME",
+          "valueFrom": "<AWS_MQ_USERNAME>"
+        },
+        {
+          "name": "AWS_MQ_PASSWORD",
+          "valueFrom": "<AWS_MQ_PASSWORD>"
+        },
+        {
+          "name": "AWS_MQ_BROKER_URL",
+          "valueFrom": "<AWS_MQ_BROKER_URL>"
+        },
+        {
+          "name": "AWS_MQ_PORT",
+          "valueFrom": "<AWS_MQ_PORT>"
+        },
+        {
+          "name"  : "AWS_SQS_STRIPE_WEBHOOKS_QUEUE_URL",
+          "valueFrom": "<AWS_SQS_STRIPE_WEBHOOKS_QUEUE_URL>"
+        },
+        {
+          "name"  : "AWS_SQS_STRIPE_WEBHOOKS_DLQ_URL",
+          "valueFrom": "<AWS_SQS_STRIPE_WEBHOOKS_DLQ_URL>"
+        },
+        {
+          "name"  : "AWS_CLOUDFRONT_URL",
+          "valueFrom": "<AWS_CLOUDFRONT_URL>"
+        },
+        {
+          "name"  : "AWS_CLOUDFRONT_DISTRIBUTION_ID",
+          "valueFrom": "<AWS_CLOUDFRONT_DISTRIBUTION_ID>"
+        },
+        {
+          "name"  : "AWS_CLOUDFRONT_KEYPAIR_ID",
+          "valueFrom": "<AWS_CLOUDFRONT_KEYPAIR_ID>"
+        },
+        {
+          "name"  : "AWS_CLOUDFRONT_PRIVATE_KEY",
+          "valueFrom": "<AWS_CLOUDFRONT_PRIVATE_KEY>"
+        }
+      ],
+      "portMappings": [
+        {
+          "hostPort": <SERVICE_PORT>,
+          "protocol": "tcp",
+          "containerPort": <SERVICE_PORT>
+        }
+      ]
+    }
+  ],
+  "requiresCompatibilities": [
+    "FARGATE"
+  ],
+  "networkMode": "awsvpc",
+  "memory": "512",
+  "cpu": "256",
+  "family": "<TASK_DEFINITION_FAMILY>"
+}
